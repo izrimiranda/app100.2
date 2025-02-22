@@ -1,0 +1,9 @@
+Dockerfile
+.dockerignore
+node_modules
+npm-debug.log
+.yarn
+.yarn-cache
+.git
+.DS_Store
+.env

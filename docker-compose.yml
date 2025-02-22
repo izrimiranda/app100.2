@@ -1,0 +1,79 @@
+version: "3.9"
+
+networks:
+  default:
+    name: pnet
+    driver: bridge
+
+services:
+  postgres:
+    container_name: postgres
+    image: postgres:15
+    env_file:
+      - .env
+    ports:
+      - ${POSTGRES_PORT}:${POSTGRES_PORT}
+    volumes:
+      - ./postgres/data:/var/lib/postgresql/data
+    restart: always
+
+  keycloak:
+    container_name: keycloak
+    image: quay.io/keycloak/keycloak:22.0.1
+    env_file:
+      - .env
+    ports:
+      - ${KC_PORT}:${KC_PORT}
+    command:
+      - start-dev
+    depends_on:
+      - postgres
+    # restart: always
+
+  backend:
+    container_name: backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    ports:
+      - ${API_PORT}:${API_PORT}
+    depends_on:
+      - postgres
+      - keycloak
+    volumes:
+      - ./backend/src:/app
+    restart: always
+
+  frontend:
+    container_name: frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+    restart: always
+    ports:
+      - ${FRONTEND_PORT}:${FRONTEND_PORT}
+    depends_on:
+      - postgres
+      - backend
+      - keycloak
+
+  # nginx:
+  #   container_name: nginx
+  #   build:
+  #     context: ./nginx
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - ${NGINX_PORT}:${NGINX_PORT}
+  #   depends_on:
+  #     - postgres
+  #     - backend
+  #     - frontend
+  #     - keycloak
+  #   restart: always
